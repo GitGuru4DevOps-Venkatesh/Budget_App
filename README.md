@@ -1,254 +1,203 @@
-![](https://img.shields.io/badge/Microverse-blueviolet)
+To build a Dockerfile for deploying a Ruby on Rails application with PostgreSQL running in separate containers, you can follow these steps using the GitHub repository you provided.
 
-# Budget-App
+Before you begin, make sure you have Docker installed on your system.
 
+Here are the steps:
 
+Step 1: Clone the Repository
+Clone the GitHub repository to your local machine:
 
-## Description
+git clone https://github.com/your-repository-name.git
 
-> The Ruby on Rails capstone project ([remember what they are?](https://github.com/microverseinc/curriculum-html-css/blob/main/articles/capstone_intro.md)) is about building a mobile web application where you can manage your budget: you have a list of transactions associated with a category, so that you can see how much money you spent and on what.
+This command clones the GitHub repository containing your Ruby on Rails application code to your local machine.
 
-- I created a Ruby on Rails application that allows the user to:
+**Step 2: Create a Dockerfile for the Rails Application**
+Inside the cloned repository's root directory, create a Dockerfile named Dockerfile-rails. You can use a text editor to create and edit this file. The Dockerfile defines how to build the Docker image for your Rails application.
 
-  - register and log in, so that the data is private to them.
-  - introduce new transactions associated with a category.
-  - see the money spent on each category.
+Here's an example of a Dockerfile for a Rails application:
 
-### Screenshots 📸
+# Use an official Ruby runtime as a parent image
+FROM ruby:2.7
 
-    Categories
-![](./app/assets/images/img1.png) 
+# Set the working directory in the container
+WORKDIR /app
 
+# Copy the Gemfile and Gemfile.lock into the container
+COPY Gemfile Gemfile.lock ./
 
-    Category-Details 
-![](./app/assets/images/img5.png) 
+# Install Rails dependencies
+RUN bundle install
 
+# Copy the rest of the application code into the container
+COPY . .
 
+# Expose port 3000 to the outside world
+EXPOSE 3000
 
-## Learning objectives
+# Start the Rails application
+CMD ["rails", "server", "-b", "0.0.0.0"]
 
-- Use ruby gems as software packages system.
-- Install Ruby on Rails framework.
-- Understand Rails RESTful design and router.
-- Use controllers to handle requests and render empty views.
-- Use params from browser request in a safe way.
-- Use preprocessed html file with embedded Ruby code.
-- Use layouts and templates for shared content.
-- Use database migration files to maintain database schema.
-- Use validations for models.
-- Secure app from n+1 problems.
-- Understand what ORM is.
-- Write SQL queries with ActiveRecord.
-- Set up associations between models.
-- uild a webapp that requires the user to log in.
-- Use devise gem for authentication.
-- Limit access to webapp resources based on authorization rules.
-- Analyze in writing why you have made a coding choice using one structure over another.
+This Dockerfile specifies how to set up a Ruby environment, install Rails dependencies, and start the Rails application.
 
-## Live Demo 🔗
+Step 3: Create a Dockerfile for PostgreSQL
+Create another Dockerfile named Dockerfile-postgres in the same directory. This Dockerfile defines how to build the Docker image for the PostgreSQL database container:
 
-[Live Demo Link](https://budgy-budget-api.herokuapp.com/)
+# Use an official PostgreSQL image as a parent image
+FROM postgres:13
 
-## Loom Video 🔗
+# Set the PostgreSQL database user and password
+ENV POSTGRES_USER=myuser
+ENV POSTGRES_PASSWORD=mypassword
 
-[Loom Video Link](https://www.loom.com/share/8822f390decc42c2848f3969c4211349)
+# Create a database named 'myapp'
+ENV POSTGRES_DB=myapp
 
-## Getting Started
+This Dockerfile uses an official PostgreSQL image and sets environment variables for the database user, password, and the name of the database.
 
-To get a local copy for this project and running follow these simple example steps.
+Step 4: Build the Docker Images
+In your terminal, navigate to the root directory of the cloned repository where you have the Dockerfiles, and build the Docker images for both the Rails application and PostgreSQL:
 
-### Prerequisites
+docker build -f Dockerfile-rails -t myrailsapp .
+docker build -f Dockerfile-postgres -t mypostgresdb .
 
-- You need to have git installed in your machine.
-- Install a recent version of Postgres.
-- Already install Rails
+Replace myrailsapp and mypostgresdb with your preferred image names.
 
+Step 5: Create a Docker Network
+Create a Docker network to enable communication between the Rails application and the PostgreSQL container:
 
-## Setup
+docker network create myapp_network
 
-## Setting Up PostgreSQL
+This network will allow the containers to connect to each other.
 
-- The postgres installation doesn't setup a user for you, so you'll need to follow these steps to create a user with permission to create databases
+Step 6: Run the PostgreSQL Container
+Start the PostgreSQL container using the Docker network you created:
 
-```bash
-$  sudo -u postgres createuser blog-app -s
-```
+docker run --name mypostgresdb --network myapp_network -d mypostgresdb
 
-### Creating the Budgy-Budget application
+This command runs the PostgreSQL container as a daemon with the specified name and connects it to the myapp_network network.
 
-- To create project with PostgreSQL database 
+Step 7: Run the Rails Application Container
+Finally, run the Rails application container and link it to the PostgreSQL container through the Docker network:
 
-```bash
-$   rails new Rails-capstone-Budgy-Budget --database=postgresql  #or
-$   rails new Rails-capstone-Budgy-Budget -d postgresql
+docker run --name myrailsapp --network myapp_network -p 3000:3000 -d myrailsapp
 
-$   cd Rails-capstone-Budget-app # Move into the application directory
-```
+This command runs the Rails application container as a daemon, maps port 3000 from the container to port 3000 on your local machine, and connects it to the myapp_network network.
 
+Step 8: Access the Rails Application
+You can access your Ruby on Rails application by opening a web browser and navigating to http://localhost:3000. This will connect to the Rails application running in the Docker container.
 
-### Clone this repository
+That's it! You've successfully created and configured Docker containers for your Ruby on Rails application and PostgreSQL database. They run independently in separate containers and communicate through the Docker network.
+------------------------------------------------------------------------------------------------------------
+To deploy a Ruby on Rails application with PostgreSQL on Google Cloud Platform (GCP), you can use Google Kubernetes Engine (GKE) to manage containers, including Docker containers, and Google Cloud SQL for PostgreSQL as your managed database service. Here's a high-level overview of the steps involved:
+
+Prepare Your Application:
+Make sure your Ruby on Rails application is containerized using Docker. This means you should have a Dockerfile in your application's source code that defines how to build the container image.
+
+Container Registry:
+Push your Docker container image to a container registry like Google Container Registry (GCR). You can use the gcloud command-line tool to do this:
+
+gcloud builds submit --tag gcr.io/your-project-id/your-image-name
+
+Replace your-project-id with your GCP project ID and your-image-name with the name you want for your container image.
+
+Google Kubernetes Engine (GKE):
+Set up a GKE cluster if you don't already have one. You can do this through the GCP Console or using the gcloud command-line tool. Ensure that your GKE cluster is properly configured, and you have kubectl configured to connect to it.
+
+Database Setup:
+Use Google Cloud SQL for PostgreSQL or other managed database services to create a PostgreSQL database for your application. Configure your Rails application to use the database connection credentials provided by GCP for the Cloud SQL instance.
+
+Kubernetes Deployment Configuration:
+Create Kubernetes deployment YAML files for your Ruby on Rails application and PostgreSQL database. Below are simplified examples:
+
+Rails Application Deployment:
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rails-app
+spec:
+  replicas: 2  # Adjust as needed
+  template:
+    metadata:
+      labels:
+        app: rails-app
+    spec:
+      containers:
+      - name: rails-app
+        image: gcr.io/your-project-id/your-image-name
+        ports:
+        - containerPort: 3000
+        
+PostgreSQL Deployment (using Cloud SQL Proxy):
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgresql
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: postgresql
+    spec:
+      containers:
+      - name: postgresql
+        image: gcr.io/cloudsql-docker/gce-proxy:1.29.0
+        command: ["/cloud_sql_proxy", "-instances=your-project-id:region:your-instance-name=tcp:5432", "-credential_file=/secrets/cloudsql/credentials.json"]
+        volumeMounts:
+        - name: cloudsql-instance-credentials
+          mountPath: /secrets/cloudsql
+          readOnly: true
+      volumes:
+      - name: cloudsql-instance-credentials
+        secret:
+          secretName: cloudsql-instance-credentials
+Adjust the deployment configurations to match your specific requirements and settings.
+
+Kubernetes Service Configuration:
+Create Kubernetes service YAML files to expose your Rails application to the internet and allow communication with the PostgreSQL database. Below are simplified examples:
+
+Rails Application Service:
+apiVersion: v1
+kind: Service
+metadata:
+  name: rails-app-service
+spec:
+  selector:
+    app: rails-app
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: LoadBalancer  # Expose your application externally
+
+PostgreSQL Service:
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgresql-service
+spec:
+  selector:
+    app: postgresql
+  ports:
+  - protocol: TCP
+    port: 5432
+  type: ClusterIP  # Accessible only within the cluster
+Adjust the service configurations based on your requirements. For PostgreSQL, consider using a private IP address for enhanced security.
+
+Deploy to GKE:
+Apply your deployment and service YAML files to deploy your Rails application and PostgreSQL to your GKE cluster:
+kubectl apply -f rails-app-deployment.yaml
+kubectl apply -f postgresql-deployment.yaml
+kubectl apply -f rails-app-service.yaml
+kubectl apply -f postgresql-service.yaml
+
+Scaling and Maintenance:
+Configure autoscaling, monitoring, and backups for your GKE cluster and Cloud SQL database as needed.
+
+Access Your Application:
+Once your application is deployed and the services are exposed, you can access it via the external IP address assigned to your Rails application service.
+-------
 
-```bash
-$ git clone https://github.com/evans22j/Budget-App.git
-$ cd Budget-App
-```
 
-### Create the database
 
-```bash
-$   rails db:create   # or
-$   rake db:create
-```
-
-### Install linter and 
-
-- Rubocop gem
-
-```bash
-$  bundle init
-$  bundle install
-```
-- Stylelint package
-
-```bash
-$  npm init -y
-$  npm install
-$  npm install --save-dev stylelint@13.x stylelint-scss@3.x stylelint-config-standard@21.x stylelint-csstree-validator@1.x
-
-```
-
-- Run linter
-
-```bash
-$  rubocop .
-$  npx stylelint "**/*.{css,scss}" 
-```
-
-- In auto-correct mode, RuboCop will try to automatically fix offenses:
-
-```bash
-$  rubocop -A # or
-$  rubocop --auto-correct-all
-$  npx stylelint "**/*.{css,scss}" --fix 
-```
-
-
-### Starting up the Web Server
-
-```bash
-$   rails s # or
-$   rails server # or
-$   rails server -p3001
-```
-
-- To restart the server
-
-```bash
-$  sudo service postgresql restart 
-$  rails db:reset #to clean the database                                                                    
-```
-
-#### Listing Existing Routes
-
-- You can now visit `http://localhost:3000` to view your new website!
-
- You can also execute the `rails routes` command in your terminal to produce the same output.
-
-
-#### Generate rspec
-
-- At the first you need to include those lines in your Gemfile
-
-```bash
-  gem 'rails-controller-testing'
-  gem 'rspec-rails'
-```
-
-#### Install RSpec
-
-```bash
-$  rails generate rspec:install
-```
-- This should generate some files that you will need to run your tests and should give us a Controller and a View
-
-- Then run:
-
-```bash
-$  rspec spec     # to test if your tests are passed
-```
-
-#### Generate MVC with scaffold
-
-```bash
-  $  rails g scaffold category name user:belongs_to
-  $  rails g scaffold records name amount:decimal user:belongs_to 
-  $  rails g scaffold category_records user:belongs_to
-  $  rails g scaffold category_records category:belongs_to record:belongs_to
-```
-
-#### Generate Schema
-
-- To push the Migration into the database
-
-```bash
-  $   rails db:migrate
-```
-- We use the seeds.rb file to records in the database
-- To drop, create a table and to migrate and send the seed into the database:
-
-```bash
-  $   rails db:drop db:create db:migrate db:seed  
-```
-
-- To check available routes
-
-```bash
-  $   rails routes  
-```
-
-#### Run Capybara
-
-```bash
-$  bundle exec rspec ./spec/features/
-```
-
-#### Run spec
-
-```bash
-$  bundle exec rspec ./spec/models/
-```
-
-## Built With 🛠️
-
-This project is build with:
-
--  ![Ruby](https://img.shields.io/badge/-Ruby-000000?style=flat&logo=ruby&logoColor=red)
--  ![Ruby on Rails](https://img.shields.io/badge/-Ruby_on_Rails-000000?style=flat&logo=ruby-on-rails&logoColor=blue)
-
-## Authors
-
-👤 **Evans Sitibekiso**
-
-- GitHub: [@evans22j](https://github.com/evans22j)
-- Twitter: [@Evans_22J](https://twitter.com/Evans_22J)
-- LinkedIn: [@Evans Sitibekiso](https://www.linkedin.com/in/evans-sitibekiso/)
-
-## 🤝 Contributor
-
-
-Contributions, issues, and feature requests are welcome!
-
-Feel free to check the [issues page](https://github.com/evans22j/Budget-App/issues).
-
-## Show your support
-
-Give a ⭐️ if you like this project!
-
-## Acknowledgments
-
-- Credit to [Gregoire Vella on Behance](https://www.behance.net/gregoirevella), the author of the original [design guidelines](https://www.behance.net/gallery/19759151/Snapscan-iOs-design-and-branding?tracking_source=)
-
-
-## 📝 License
-
-This project is [MIT](./MIT.md) licensed.
