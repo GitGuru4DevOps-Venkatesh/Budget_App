@@ -1,0 +1,9 @@
+# Use an official PostgreSQL image as a parent image
+FROM postgres:13
+
+# Set the PostgreSQL database user and password
+ENV POSTGRES_USER=myuser
+ENV POSTGRES_PASSWORD=mypassword
+
+# Create a database named 'myapp'
+ENV POSTGRES_DB=myapp
